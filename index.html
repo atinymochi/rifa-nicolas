@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -29,13 +28,16 @@
   #stat-avail { color: var(--success); }
   .login-section { margin-bottom: 1.5rem; }
   .login-row { display: flex; gap: 8px; align-items: center; max-width: 340px; }
-  input[type="password"] { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.15s; }
-  input[type="password"]:focus { border-color: var(--accent); }
-  input[type="password"]::placeholder { color: var(--muted); }
+  input[type="password"], input[type="text"] { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 14px; outline: none; transition: border-color 0.15s; width: 100%; }
+  input[type="password"] { flex: 1; width: auto; }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
   .btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; padding: 10px 18px; cursor: pointer; transition: background 0.15s, border-color 0.15s; white-space: nowrap; letter-spacing: 0.3px; }
   .btn:hover { background: var(--surface); border-color: #444; }
   .btn.accent { background: var(--accent); border-color: var(--accent); color: #000; }
   .btn.accent:hover { background: #e8d93a; }
+  .btn.danger { border-color: var(--sold); color: var(--sold); }
+  .btn.danger:hover { background: rgba(232,69,60,0.1); }
   .admin-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(61,220,132,0.1); border: 1px solid rgba(61,220,132,0.3); border-radius: 8px; padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--success); margin-bottom: 1rem; }
   .admin-badge::before { content: '●'; font-size: 8px; }
   .hint { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 1.25rem; letter-spacing: 0.3px; }
@@ -43,12 +45,46 @@
   .legend span { display: flex; align-items: center; gap: 7px; }
   .legend-box { width: 14px; height: 14px; border-radius: 3px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 5px; }
-  .num { height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; border-radius: 7px; border: 1px solid var(--border); background: var(--available); color: #555; cursor: default; transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.1s; user-select: none; }
+  .num { height: 46px; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; border-radius: 7px; border: 1px solid var(--border); background: var(--available); color: #555; cursor: default; transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.1s; user-select: none; position: relative; }
   .num.sold { background: var(--sold); border-color: var(--sold); color: #fff; }
   .num.admin-mode { cursor: pointer; }
   .num.admin-mode:not(.sold):hover { background: var(--available-hover); border-color: #3a3a3a; color: var(--text); }
   .num.admin-mode.sold:hover { background: var(--sold-hover); border-color: var(--sold-hover); }
   .num.admin-mode:active { transform: scale(0.92); }
+
+  /* Tooltip con nombre */
+  .num[data-owner]:hover::after {
+    content: attr(data-owner);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--surface); border: 1px solid #333; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 320px; }
+  .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .modal p { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 1rem; }
+  .modal input { margin-bottom: 1rem; }
+  .modal-buttons { display: flex; gap: 8px; }
+  .modal-buttons .btn { flex: 1; text-align: center; }
+
+  /* Modal liberación */
+  .release-info { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
+  .release-info strong { color: var(--text); }
+
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 999; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   @media (max-width: 480px) {
@@ -83,7 +119,7 @@
 
 <div id="admin-section" style="display:none;">
   <div class="admin-badge">Modo administrador activo</div>
-  <p class="hint">Haz clic en un número para marcarlo como vendido o liberarlo.</p>
+  <p class="hint">Clic en un número disponible para venderlo · Clic en uno vendido para liberarlo.</p>
 </div>
 
 <div class="legend">
@@ -93,6 +129,31 @@
 
 <div class="grid" id="grid"></div>
 <div class="toast" id="toast"></div>
+
+<!-- Modal: vender número -->
+<div class="modal-overlay" id="modal-sell">
+  <div class="modal">
+    <h2>Número <span id="modal-num"></span></h2>
+    <p>¿A nombre de quién se vende?</p>
+    <input type="text" id="modal-name" placeholder="Nombre del comprador..." maxlength="40" />
+    <div class="modal-buttons">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn accent" onclick="confirmSell()">Confirmar venta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: liberar número -->
+<div class="modal-overlay" id="modal-release">
+  <div class="modal">
+    <h2>Número <span id="release-num"></span></h2>
+    <p class="release-info">Vendido a <strong id="release-owner"></strong></p>
+    <div class="modal-buttons">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn danger" onclick="confirmRelease()">Liberar número</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
@@ -110,7 +171,8 @@
 
   const PASS = "2908";
   let isAdmin = false;
-  let sold = new Set();
+  let sold = {};  // { numero: nombre }
+  let pendingNum = null;
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
@@ -124,8 +186,9 @@
   }
 
   function updateStats() {
-    document.getElementById("stat-sold").textContent = sold.size;
-    document.getElementById("stat-avail").textContent = 300 - sold.size;
+    const count = Object.keys(sold).length;
+    document.getElementById("stat-sold").textContent = count;
+    document.getElementById("stat-avail").textContent = 300 - count;
   }
 
   function renderGrid() {
@@ -133,21 +196,71 @@
     grid.innerHTML = "";
     for (let i = 1; i <= 300; i++) {
       const el = document.createElement("div");
-      el.className = "num" + (sold.has(i) ? " sold" : "") + (isAdmin ? " admin-mode" : "");
+      const owner = sold[i];
+      el.className = "num" + (owner ? " sold" : "") + (isAdmin ? " admin-mode" : "");
       el.textContent = i;
-      el.addEventListener("click", () => toggleNum(i, el));
+      if (owner) el.setAttribute("data-owner", owner);
+      el.addEventListener("click", () => handleClick(i));
       grid.appendChild(el);
     }
     updateStats();
   }
 
-  async function toggleNum(n, el) {
+  function handleClick(n) {
     if (!isAdmin) return;
-    if (sold.has(n)) { sold.delete(n); el.classList.remove("sold"); showToast(`Número ${n} → disponible`); }
-    else { sold.add(n); el.classList.add("sold"); showToast(`Número ${n} → vendido`); }
-    updateStats();
-    await set(rifaRef, [...sold]);
+    pendingNum = n;
+    if (sold[n]) {
+      document.getElementById("release-num").textContent = n;
+      document.getElementById("release-owner").textContent = sold[n];
+      document.getElementById("modal-release").classList.add("open");
+    } else {
+      document.getElementById("modal-num").textContent = n;
+      document.getElementById("modal-name").value = "";
+      document.getElementById("modal-sell").classList.add("open");
+      setTimeout(() => document.getElementById("modal-name").focus(), 100);
+    }
   }
+
+  window.closeModal = function() {
+    document.getElementById("modal-sell").classList.remove("open");
+    document.getElementById("modal-release").classList.remove("open");
+    pendingNum = null;
+  }
+
+  window.confirmSell = async function() {
+    const name = document.getElementById("modal-name").value.trim();
+    if (!name) { document.getElementById("modal-name").focus(); return; }
+    sold[pendingNum] = name;
+    closeModal();
+    showToast(`Número ${pendingNum} → ${name}`);
+    updateStats();
+    renderGrid();
+    await set(rifaRef, sold);
+  }
+
+  window.confirmRelease = async function() {
+    const n = pendingNum;
+    delete sold[n];
+    closeModal();
+    showToast(`Número ${n} liberado`);
+    updateStats();
+    renderGrid();
+    await set(rifaRef, sold);
+  }
+
+  // Cerrar modal al hacer clic fuera
+  document.getElementById("modal-sell").addEventListener("click", function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById("modal-release").addEventListener("click", function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Enter en input confirma
+  document.getElementById("modal-name").addEventListener("keydown", e => {
+    if (e.key === "Enter") confirmSell();
+    if (e.key === "Escape") closeModal();
+  });
 
   function tryLogin() {
     const val = document.getElementById("pwd").value;
@@ -171,7 +284,7 @@
 
   onValue(rifaRef, snapshot => {
     const data = snapshot.val();
-    sold = data ? new Set(data.map(Number)) : new Set();
+    sold = data && typeof data === "object" ? data : {};
     renderGrid();
   });
 </script>
