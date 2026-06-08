@@ -1,0 +1,152 @@
+
+<style>
+  h2.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+  .header { padding: 1.5rem 0 1rem; }
+  .header h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; color: var(--color-text-primary); }
+  .header p { font-size: 14px; color: var(--color-text-secondary); margin: 0; }
+  .stats { display: flex; gap: 12px; margin: 1rem 0; }
+  .stat { flex: 1; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.75rem 1rem; }
+  .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .login-bar { display: flex; gap: 8px; margin: 1rem 0; align-items: center; }
+  .login-bar input { flex: 1; }
+  .login-bar button { white-space: nowrap; }
+  .admin-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 6px 12px; background: var(--color-background-success); color: var(--color-text-success); border-radius: var(--border-radius-md); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin: 1rem 0; }
+  .num { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); color: var(--color-text-primary); cursor: default; transition: background 0.15s, color 0.15s; user-select: none; }
+  .num.sold { background: #E24B4A; border-color: #A32D2D; color: #fff; }
+  .num.admin-mode { cursor: pointer; }
+  .num.admin-mode:not(.sold):hover { background: var(--color-background-secondary); border-color: var(--color-border-secondary); }
+  .num.admin-mode.sold:hover { background: #F09595; }
+  .legend { display: flex; gap: 16px; margin: 0.5rem 0 1rem; font-size: 13px; color: var(--color-text-secondary); align-items: center; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; margin-right: 6px; vertical-align: middle; }
+  .hint { font-size: 12px; color: var(--color-text-tertiary); margin: 0.5rem 0 1rem; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px 20px; font-size: 14px; color: var(--color-text-primary); box-shadow: none; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
+</style>
+
+<h2 class="sr-only">Tablero de rifa con 300 números. Los números en rojo están vendidos.</h2>
+
+<div class="header">
+  <h1><i class="ti ti-ticket" aria-hidden="true" style="margin-right:8px;font-size:20px;vertical-align:-2px;"></i>Mi rifa</h1>
+  <p>Tablero compartido — se actualiza en tiempo real</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-label">Disponibles</div><div class="stat-value" id="avail">300</div></div>
+  <div class="stat"><div class="stat-label">Vendidos</div><div class="stat-value" id="sold-count" style="color:#E24B4A;">0</div></div>
+  <div class="stat"><div class="stat-label">Total</div><div class="stat-value">300</div></div>
+</div>
+
+<div id="login-section">
+  <div class="login-bar">
+    <input type="password" id="pwd-input" placeholder="Clave de administrador..." style="max-width:220px;" />
+    <button id="login-btn" onclick="tryLogin()"><i class="ti ti-lock-open" aria-hidden="true"></i> Entrar</button>
+  </div>
+</div>
+
+<div id="admin-section" style="display:none; margin: 0.5rem 0 1rem;">
+  <div class="admin-badge"><i class="ti ti-shield-check" aria-hidden="true"></i> Modo administrador activo</div>
+  <p class="hint">Haz clic en un número para marcarlo como vendido o disponible.</p>
+</div>
+
+<div class="legend">
+  <span><span class="legend-dot" style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);"></span>Disponible</span>
+  <span><span class="legend-dot" style="background:#E24B4A;"></span>Vendido</span>
+</div>
+
+<div class="grid" id="grid"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const PASS = "2908";
+const STORAGE_KEY = "rifa-300-sold";
+let isAdmin = false;
+let sold = new Set();
+let syncInterval = null;
+
+function showToast(msg, dur=1800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function tryLogin() {
+  const val = document.getElementById('pwd-input').value;
+  if(val === PASS) {
+    isAdmin = true;
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('admin-section').style.display = 'block';
+    document.querySelectorAll('.num').forEach(el => el.classList.add('admin-mode'));
+    showToast('✓ Acceso concedido');
+  } else {
+    showToast('Clave incorrecta');
+    document.getElementById('pwd-input').value = '';
+  }
+}
+
+document.getElementById('pwd-input').addEventListener('keydown', e => {
+  if(e.key === 'Enter') tryLogin();
+});
+
+function updateStats() {
+  const s = sold.size;
+  document.getElementById('sold-count').textContent = s;
+  document.getElementById('avail').textContent = 300 - s;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for(let i = 1; i <= 300; i++) {
+    const el = document.createElement('div');
+    el.className = 'num' + (sold.has(i) ? ' sold' : '') + (isAdmin ? ' admin-mode' : '');
+    el.textContent = i;
+    el.dataset.n = i;
+    el.addEventListener('click', () => toggleNum(i, el));
+    grid.appendChild(el);
+  }
+  updateStats();
+}
+
+async function toggleNum(n, el) {
+  if(!isAdmin) return;
+  if(sold.has(n)) { sold.delete(n); el.classList.remove('sold'); showToast(`Número ${n} marcado como disponible`); }
+  else { sold.add(n); el.classList.add('sold'); showToast(`Número ${n} marcado como vendido`); }
+  updateStats();
+  await saveData();
+}
+
+async function saveData() {
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify([...sold]), true);
+  } catch(e) { console.error('Error guardando:', e); }
+}
+
+async function loadData() {
+  try {
+    const res = await window.storage.get(STORAGE_KEY, true);
+    if(res && res.value) {
+      const arr = JSON.parse(res.value);
+      sold = new Set(arr.map(Number));
+    }
+  } catch(e) { sold = new Set(); }
+  renderGrid();
+}
+
+async function syncData() {
+  try {
+    const res = await window.storage.get(STORAGE_KEY, true);
+    if(res && res.value) {
+      const arr = JSON.parse(res.value);
+      const remote = new Set(arr.map(Number));
+      const changed = remote.size !== sold.size || [...remote].some(x => !sold.has(x));
+      if(changed) { sold = remote; renderGrid(); }
+    }
+  } catch(e) {}
+}
+
+loadData();
+syncInterval = setInterval(syncData, 5000);
+</script>
