@@ -39,7 +39,6 @@
   .btn.danger { border-color: var(--sold); color: var(--sold); }
   .btn.danger:hover { background: rgba(232,69,60,0.1); }
   
-  /* MODIFICADO: Estilos para la fila del encabezado de administración */
   .admin-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px; }
   .admin-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(61,220,132,0.1); border: 1px solid rgba(61,220,132,0.3); border-radius: 8px; padding: 8px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--success); }
   .admin-badge::before { content: '●'; font-size: 8px; }
@@ -82,12 +81,12 @@
   .modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
   .modal p { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 1rem; }
   .modal input { margin-bottom: 1rem; }
-  .modal-buttons { display: flex; gap: 8px; }
-  .modal-buttons .btn { flex: 1; text-align: center; }
+  .modal-buttons { display: flex; gap: 8px; flex-direction: column; } /* MODIFICADO: Botones en columna para mejor organización */
+  .modal-buttons-row { display: flex; gap: 8px; width: 100%; }
+  .modal-buttons .btn { width: 100%; text-align: center; }
 
   /* Modal liberación */
-  .release-info { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
-  .release-info strong { color: var(--text); }
+  .release-info { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 0.5rem; }
 
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 999; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -125,7 +124,7 @@
     <div class="admin-badge">Modo administrador activo</div>
     <button class="btn danger" onclick="logout()" style="padding: 6px 12px; font-size: 12px;">Salir del modo Admin</button>
   </div>
-  <p class="hint">Clic en un número disponible para venderlo · Clic en uno vendido para liberarlo.</p>
+  <p class="hint">Clic en un número disponible para venderlo · Clic en uno vendido para modificarlo o liberarlo.</p>
 </div>
 
 <div class="legend">
@@ -142,8 +141,10 @@
     <p>¿A nombre de quién se vende?</p>
     <input type="text" id="modal-name" placeholder="Nombre del comprador..." maxlength="40" />
     <div class="modal-buttons">
-      <button class="btn" onclick="closeModal()">Cancelar</button>
-      <button class="btn accent" onclick="confirmSell()">Confirmar venta</button>
+      <div class="modal-buttons-row">
+        <button class="btn" onclick="closeModal()">Cancelar</button>
+        <button class="btn accent" onclick="confirmSell()">Confirmar venta</button>
+      </div>
     </div>
   </div>
 </div>
@@ -151,10 +152,15 @@
 <div class="modal-overlay" id="modal-release">
   <div class="modal">
     <h2>Número <span id="release-num"></span></h2>
-    <p class="release-info">Vendido a <strong id="release-owner"></strong></p>
+    <p class="release-info">Modificar dueño:</p>
+    <input type="text" id="release-owner-input" placeholder="Nombre del comprador..." maxlength="40" />
+    
     <div class="modal-buttons">
-      <button class="btn" onclick="closeModal()">Cancelar</button>
-      <button class="btn danger" onclick="confirmRelease()">Liberar número</button>
+      <button class="btn accent" onclick="confirmEdit()">Guardar Cambios</button>
+      <div class="modal-buttons-row">
+        <button class="btn" onclick="closeModal()">Cancelar</button>
+        <button class="btn danger" onclick="confirmRelease()">Liberar número</button>
+      </div>
     </div>
   </div>
 </div>
@@ -215,8 +221,10 @@
     pendingNum = n;
     if (sold[n]) {
       document.getElementById("release-num").textContent = n;
-      document.getElementById("release-owner").textContent = sold[n];
+      // MODIFICADO: Carga el nombre actual en el input para poder editarlo
+      document.getElementById("release-owner-input").value = sold[n]; 
       document.getElementById("modal-release").classList.add("open");
+      setTimeout(() => document.getElementById("release-owner-input").focus(), 100);
     } else {
       document.getElementById("modal-num").textContent = n;
       document.getElementById("modal-name").value = "";
@@ -237,6 +245,19 @@
     sold[pendingNum] = name;
     closeModal();
     showToast(`Número ${pendingNum} → ${name}`);
+    updateStats();
+    renderGrid();
+    await set(rifaRef, sold);
+  }
+
+  // MODIFICADO: Nueva función para confirmar la EDICIÓN del nombre sin liberar el número
+  window.confirmEdit = async function() {
+    const newName = document.getElementById("release-owner-input").value.trim();
+    if (!newName) { document.getElementById("release-owner-input").focus(); return; }
+    
+    sold[pendingNum] = newName;
+    closeModal();
+    showToast(`Número ${pendingNum} actualizado → ${newName}`);
     updateStats();
     renderGrid();
     await set(rifaRef, sold);
@@ -266,6 +287,12 @@
     if (e.key === "Escape") closeModal();
   });
 
+  // MODIFICADO: Atajos de teclado para el input de edición
+  document.getElementById("release-owner-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") confirmEdit();
+    if (e.key === "Escape") closeModal();
+  });
+
   function tryLogin() {
     const val = document.getElementById("pwd").value;
     if (val === PASS) {
@@ -280,13 +307,12 @@
     }
   }
 
-  // MODIFICADO: Nueva función para salir del modo administrador de forma reactiva
   function logout() {
     isAdmin = false;
-    document.getElementById("pwd").value = ""; // Limpiar el input de contraseña
+    document.getElementById("pwd").value = ""; 
     document.getElementById("admin-section").style.display = "none";
     document.getElementById("login-section").style.display = "block";
-    renderGrid(); // Redibujar la grilla quita la clase '.admin-mode' y los clics
+    renderGrid(); 
     showToast("Modo administrador cerrado");
   }
 
@@ -295,7 +321,7 @@
   });
 
   window.tryLogin = tryLogin;
-  window.logout = logout; // MODIFICADO: Exponer logout a la ventana global
+  window.logout = logout; 
 
   onValue(rifaRef, snapshot => {
     const data = snapshot.val();
