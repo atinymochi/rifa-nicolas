@@ -185,10 +185,10 @@
   }
 
   function updateStats() {
-    const count = Object.keys(sold).filter(k => !isNaN(k)).length;
-    document.getElementById("stat-sold").textContent = count;
-    document.getElementById("stat-avail").textContent = 300 - count;
-  }
+  const count = Object.keys(sold).filter(k => k.trim() !== "" && !isNaN(k) && Number(k) >= 1 && Number(k) <= 300).length;
+  document.getElementById("stat-sold").textContent = count;
+  document.getElementById("stat-avail").textContent = 300 - count;
+}
 
   function renderGrid() {
     const grid = document.getElementById("grid");
