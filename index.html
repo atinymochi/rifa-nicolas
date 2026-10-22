@@ -196,18 +196,15 @@
     setTimeout(() => t.classList.remove("show"), 2000);
   }
 
-  // Normaliza tanto el formato en objeto { name, status } como strings antiguos ("Nombre (pagado)")
+  // Normaliza tanto Objetos como Arrays devueltos por Firebase
   function normalize(data) {
     const out = {};
-    if (!data) return out;
+    if (!data || typeof data !== "object") return out;
 
-    // Si Firebase devuelve un Array o un Objeto
-    const isArray = Array.isArray(data);
-    const keys = isArray ? Object.keys(data) : Object.keys(data);
+    const keys = Object.keys(data);
 
     for (const k of keys) {
       const n = Number(k);
-      // Ajustamos la condición para permitir índices 0 si Firebase convirtió a Array
       if (isNaN(n) || n < 1 || n > 300) continue;
       
       const v = data[k];
@@ -339,9 +336,9 @@
       document.getElementById("login-section").style.display = "none";
       document.getElementById("admin-section").style.display = "block";
       
-      const elements = document.querySelectorAll(".num");
-      if (elements && elements.length > 0) {
-        elements.forEach(el => el.classList.add("admin-mode"));
+      const nums = document.querySelectorAll(".num");
+      if (nums && nums.length > 0) {
+        nums.forEach(el => el.classList.add("admin-mode"));
       }
       
       showToast("✓ Acceso concedido");
