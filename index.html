@@ -196,16 +196,27 @@
     setTimeout(() => t.classList.remove("show"), 2000);
   }
 
-  // Acepta datos viejos (solo nombre) y nuevos ({name, status})
+  // Normaliza tanto el formato en objeto { name, status } como strings antiguos ("Nombre (pagado)")
   function normalize(data) {
     const out = {};
     if (!data || typeof data !== "object") return out;
-    for (const k of Object.keys(data)) {
+
+    // Detecta si la estructura viene como arreglo o como objeto de Firebase
+    const keys = Array.isArray(data) ? data.map((_, i) => i) : Object.keys(data);
+
+    for (const k of keys) {
       const n = Number(k);
       if (!Number.isInteger(n) || n < 1 || n > 300) continue;
       const v = data[k];
-      if (typeof v === "string" && v) out[n] = { name: v, status: "pending" };
-      else if (v && typeof v === "object" && v.name) out[n] = { name: String(v.name), status: v.status === "paid" ? "paid" : "pending" };
+
+      if (typeof v === "string" && v.trim()) {
+        const isPaid = v.toLowerCase().includes("pagado");
+        // Limpiamos los textos "(pagado)" o "(pendiente)" del nombre para que se vea limpio
+        const cleanName = v.replace(/\s*\((pagado|pendiente)\)/i, "").trim();
+        out[n] = { name: cleanName, status: isPaid ? "paid" : "pending" };
+      } else if (v && typeof v === "object" && v.name) {
+        out[n] = { name: String(v.name), status: v.status === "paid" ? "paid" : "pending" };
+      }
     }
     return out;
   }
@@ -351,7 +362,6 @@
     b.style.display = "block";
   }
 
-  // Dibuja el tablero de inmediato, aunque Firebase tarde o falle
   renderGrid();
 
   try {
