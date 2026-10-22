@@ -196,27 +196,16 @@
     setTimeout(() => t.classList.remove("show"), 2000);
   }
 
-  // Normaliza tanto Objetos como Arrays devueltos por Firebase
+  // Acepta datos viejos (solo nombre) y nuevos ({name, status})
   function normalize(data) {
     const out = {};
     if (!data || typeof data !== "object") return out;
-
-    const keys = Object.keys(data);
-
-    for (const k of keys) {
+    for (const k of Object.keys(data)) {
       const n = Number(k);
-      if (isNaN(n) || n < 1 || n > 300) continue;
-      
+      if (!Number.isInteger(n) || n < 1 || n > 300) continue;
       const v = data[k];
-      if (!v) continue;
-
-      if (typeof v === "string" && v.trim()) {
-        const isPaid = v.toLowerCase().includes("pagado");
-        const cleanName = v.replace(/\s*\((pagado|pendiente)\)/i, "").trim();
-        out[n] = { name: cleanName, status: isPaid ? "paid" : "pending" };
-      } else if (typeof v === "object" && v.name) {
-        out[n] = { name: String(v.name), status: v.status === "paid" ? "paid" : "pending" };
-      }
+      if (typeof v === "string" && v) out[n] = { name: v, status: "pending" };
+      else if (v && typeof v === "object" && v.name) out[n] = { name: String(v.name), status: v.status === "paid" ? "paid" : "pending" };
     }
     return out;
   }
@@ -335,12 +324,7 @@
       isAdmin = true;
       document.getElementById("login-section").style.display = "none";
       document.getElementById("admin-section").style.display = "block";
-      
-      const nums = document.querySelectorAll(".num");
-      if (nums && nums.length > 0) {
-        nums.forEach(el => el.classList.add("admin-mode"));
-      }
-      
+      document.querySelectorAll(".num").forEach(el => el.classList.add("admin-mode"));
       showToast("✓ Acceso concedido");
     } else {
       showToast("Clave incorrecta");
@@ -367,6 +351,7 @@
     b.style.display = "block";
   }
 
+  // Dibuja el tablero de inmediato, aunque Firebase tarde o falle
   renderGrid();
 
   try {
