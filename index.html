@@ -199,22 +199,25 @@
   // Normaliza tanto el formato en objeto { name, status } como strings antiguos ("Nombre (pagado)")
   function normalize(data) {
     const out = {};
-    if (!data || typeof data !== "object") return out;
+    if (!data) return out;
 
-    // Detecta si la estructura viene como arreglo o como objeto de Firebase
-    const keys = Array.isArray(data) ? data.map((_, i) => i) : Object.keys(data);
+    // Si Firebase devuelve un Array o un Objeto
+    const isArray = Array.isArray(data);
+    const keys = isArray ? Object.keys(data) : Object.keys(data);
 
     for (const k of keys) {
       const n = Number(k);
-      if (!Number.isInteger(n) || n < 1 || n > 300) continue;
+      // Ajustamos la condición para permitir índices 0 si Firebase convirtió a Array
+      if (isNaN(n) || n < 1 || n > 300) continue;
+      
       const v = data[k];
+      if (!v) continue;
 
       if (typeof v === "string" && v.trim()) {
         const isPaid = v.toLowerCase().includes("pagado");
-        // Limpiamos los textos "(pagado)" o "(pendiente)" del nombre para que se vea limpio
         const cleanName = v.replace(/\s*\((pagado|pendiente)\)/i, "").trim();
         out[n] = { name: cleanName, status: isPaid ? "paid" : "pending" };
-      } else if (v && typeof v === "object" && v.name) {
+      } else if (typeof v === "object" && v.name) {
         out[n] = { name: String(v.name), status: v.status === "paid" ? "paid" : "pending" };
       }
     }
@@ -335,7 +338,12 @@
       isAdmin = true;
       document.getElementById("login-section").style.display = "none";
       document.getElementById("admin-section").style.display = "block";
-      document.querySelectorAll(".num").forEach(el => el.classList.add("admin-mode"));
+      
+      const elements = document.querySelectorAll(".num");
+      if (elements && elements.length > 0) {
+        elements.forEach(el => el.classList.add("admin-mode"));
+      }
+      
       showToast("✓ Acceso concedido");
     } else {
       showToast("Clave incorrecta");
