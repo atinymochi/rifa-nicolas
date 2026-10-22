@@ -36,14 +36,28 @@ function getItemData(item) {
 }
 
 function updateStats() {
-  const count = Object.keys(sold).filter(k => {
-    if (k.trim() === "" || isNaN(k)) return false;
-    const num = Number(k);
-    return num >= 1 && num <= 300 && sold[k];
-  }).length;
-  
-  document.getElementById("stat-sold").textContent = count;
-  document.getElementById("stat-avail").textContent = 300 - count;
+  let pendingCount = 0;
+  let paidCount = 0;
+
+  Object.keys(sold).forEach(k => {
+    if (k.trim() !== "" && !isNaN(k)) {
+      const num = Number(k);
+      if (num >= 1 && num <= 300 && sold[k]) {
+        const item = getItemData(sold[k]);
+        if (item.status === "pending") {
+          pendingCount++;
+        } else {
+          paidCount++;
+        }
+      }
+    }
+  });
+
+  const totalSold = pendingCount + paidCount;
+
+  document.getElementById("stat-pending").textContent = pendingCount;
+  document.getElementById("stat-sold").textContent = paidCount;
+  document.getElementById("stat-avail").textContent = 300 - totalSold;
 }
 
 function renderGrid() {

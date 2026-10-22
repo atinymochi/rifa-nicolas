@@ -85,7 +85,7 @@ header {
 
 .stats { 
   display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
+  grid-template-columns: repeat(4, 1fr); 
   gap: 1px; 
   background: var(--border); 
   border: 1px solid var(--border); 
@@ -114,7 +114,8 @@ header {
   letter-spacing: -1px; 
 }
 
-#stat-sold { color: var(--accent); }
+#stat-pending { color: var(--sold-pending); }
+#stat-sold { color: var(--sold-paid); }
 #stat-avail { color: var(--success); }
 
 .login-section { margin-bottom: 1.5rem; }
